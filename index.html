@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>MotoLog & Find</title>
+  
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <style>
+    :root {
+      --brand-orange: #ff761a;
+      --brand-orange-hover: #e66a17;
+      --bg-light: #f8f9fa;
+      --text-main: #212529;
+      --text-muted: #6c757d;
+    }
+
+    body {
+      background-color: #e9ecef;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    .app-container {
+      max-width: 414px;
+      margin: 0 auto;
+      background-color: #ffffff;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      box-shadow: 0 0 20px rgba(0,0,0,0.1);
+      overflow: hidden;
+    }
+
+    .content-area {
+      flex-grow: 1;
+      overflow-y: auto;
+      padding-bottom: 80px; 
+      background-color: var(--bg-light);
+    }
+
+    .btn-primary-custom {
+      background-color: var(--brand-orange);
+      border-color: var(--brand-orange);
+      color: white;
+      border-radius: 10px;
+      padding: 12px;
+      font-weight: 600;
+    }
+    .btn-primary-custom:hover {
+      background-color: var(--brand-orange-hover);
+      color: white;
+    }
+    
+    .btn-google {
+      background-color: white;
+      border: 1px solid #ddd;
+      color: var(--text-main);
+      border-radius: 10px;
+      padding: 12px;
+      font-weight: 500;
+    }
+
+    .form-control-custom {
+      background-color: white;
+      border: 1px solid #eee;
+      border-radius: 10px;
+      padding: 12px 15px;
+    }
+    .form-control-custom:focus {
+      border-color: var(--brand-orange);
+      box-shadow: none;
+    }
+
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 15px 20px;
+      background-color: white;
+      font-weight: 600;
+      font-size: 1.1rem;
+      z-index: 10;
+    }
+
+    .bottom-nav {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: white;
+      display: flex;
+      justify-content: space-between;
+      padding: 10px 15px 20px 15px;
+      border-top: 1px solid #eee;
+      z-index: 1000;
+    }
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.7rem;
+      cursor: pointer;
+      flex: 1;
+      text-align: center;
+    }
+    .nav-item i {
+      font-size: 1.3rem;
+      margin-bottom: 4px;
+    }
+    .nav-item.active {
+      color: var(--brand-orange);
+    }
+
+    .expense-item, .vehicle-item, .notification-item {
+      background: white;
+      border-radius: 12px;
+      padding: 15px;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+      border: 1px solid transparent;
+    }
+    .vehicle-item { cursor: pointer; }
+    .vehicle-item.active-vehicle {
+      border-color: var(--brand-orange);
+      background-color: #fffaf6;
+    }
+    
+    .expense-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      background-color: #f1f3f5;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      color: var(--text-muted);
+      margin-right: 15px;
+      flex-shrink: 0;
+    }
+
+    .notification-icon {
+      width: 45px;
+      height: 45px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      margin-right: 15px;
+      flex-shrink: 0;
+    }
+    .icon-danger { background-color: #fdeaea; color: #dc3545; }
+    .icon-warning { background-color: #fcf1e5; color: #b76e00; }
+    .icon-promo { background-color: var(--brand-orange); color: white; }
+    
+    .category-btn {
+      border: 1px solid #eee;
+      background: white;
+      border-radius: 10px;
+      padding: 15px 10px;
+      text-align: center;
+      flex: 1;
+      margin: 0 5px;
+      cursor: pointer;
+      color: var(--text-muted);
+    }
+    .category-btn.active {
+      background-color: var(--brand-orange);
+      color: white;
+      border-color: var(--brand-orange);
+    }
+
+    input[type="date"]::-webkit-calendar-picker-indicator {
+      cursor: pointer;
+      opacity: 0.6;
+    }
+    
+    #osm-map {
+      height: calc(100vh - 160px); 
+      width: 100%;
+      border-radius: 12px;
+      z-index: 1;
+    }
+  </style>
+</head>
+<body>
+
+
+    <!-- TODO -->
+     <!-- Ogarnąć widoki do końca
+     Backend
+     Posprzątać
+     Rozbić na oddzielne pliki bo zrobiłem trochę stringif
+     Pousuwać placeholdery
+     Doszlifować parę rzeczy
+     DOdać tam te firebase i resztę -->
+
+
+
+  <div id="app" class="app-container">
+
+    <!-- WIDOK: Logowanie -->
+    <div v-if="currentView === 'login'" class="content-area d-flex flex-column" style="background: linear-gradient(to bottom, #e9ecef 0%, #f8f9fa 50%); padding-bottom: 0;">
+      <div class="flex-grow-1 d-flex flex-column justify-content-center px-4">
+        <div class="text-center mb-5">
+          <div class="bg-dark text-white rounded-4 d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
+            <i class="fa-solid fa-car-side fs-2"></i>
+          </div>
+          <h2 class="fw-bold">MotoLog & Find</h2>
+          <p class="text-muted small">Zarządzaj swoją flotą z łatwością.</p>
+        </div>
+
+        <div class="bg-white p-4 rounded-4 shadow-sm">
+          <form @submit.prevent="login">
+            <div class="mb-3 input-group">
+              <span class="input-group-text bg-transparent"><i class="fa-regular fa-envelope text-muted"></i></span>
+              <input type="email" class="form-control" v-model="loginForm.email" placeholder="Adres e-mail" required>
+            </div>
+            <div class="mb-2 input-group">
+              <span class="input-group-text bg-transparent"><i class="fa-solid fa-lock text-muted"></i></span>
+              <input type="password" class="form-control" v-model="loginForm.password" placeholder="Hasło" required>
+            </div>
+            <div class="text-end mb-4">
+              <a href="#" class="text-decoration-none small" style="color: var(--brand-orange);">Zapomniałeś hasła?</a>
+            </div>
+            <button type="submit" class="btn btn-primary-custom w-100 mb-3">Zaloguj się</button>
+            <div class="text-center text-muted small mb-3">lub</div>
+            <button type="button" class="btn btn-google w-100 d-flex align-items-center justify-content-center">
+              <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" alt="G" class="me-2" style="width: 18px;">
+              Zaloguj przez Google
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- WIDOKI PO ZALOGOWANIU -->
+    <template v-else>
+      <!-- Górny pasek -->
+      <div class="top-bar shadow-sm">
+        <i class="fa-solid fa-car"></i>
+        <span>{{ activeVehicle && currentView !== 'notifications' ? `${activeVehicle.make} ${activeVehicle.model}` : 'MotoLog & Find' }}</span>
+        <!-- Klikalny dzwonek do powiadomień -->
+        <i class="fa-solid fa-bell position-relative" style="cursor: pointer; color: var(--brand-orange);" @click="currentView = 'notifications'">
+          <span v-if="notifications.length > 0" class="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-light rounded-circle">
+            <span class="visually-hidden">Nowe powiadomienia</span>
+          </span>
+        </i>
+      </div>
+
+      <main class="content-area p-3">
+        
+        <!-- WIDOK: Moje Pojazdy -->
+        <div v-if="currentView === 'vehicles'">
+          <h5 class="fw-bold mb-3">Moje pojazdy</h5>
+          
+          <div v-if="vehicles.length === 0" class="text-center py-5">
+            <i class="fa-solid fa-car-burst text-muted mb-3" style="font-size: 3rem;"></i>
+            <h6 class="text-muted">Nie masz jeszcze żadnych pojazdów.</h6>
+          </div>
+
+          <div v-else class="expense-list mb-4">
+            <div 
+              class="vehicle-item" 
+              v-for="v in vehicles" 
+              :key="v.id" 
+              :class="{'active-vehicle': activeVehicleId === v.id}"
+              @click="selectVehicle(v.id)">
+              <div class="expense-icon"><i class="fa-solid fa-car-side"></i></div>
+              <div class="flex-grow-1">
+                <div class="fw-bold">{{ v.make }} {{ v.model }}</div>
+                <div class="text-muted small">Rocznik: {{ v.year }} | Przebieg: {{ v.mileage }} km</div>
+              </div>
+              <i class="fa-solid fa-chevron-right text-muted"></i>
+            </div>
+          </div>
+
+          <button class="btn btn-primary-custom w-100" @click="currentView = 'add_vehicle'">
+            <i class="fa-solid fa-plus me-2"></i> Dodaj pojazd
+          </button>
+        </div>
+
+        <!-- WIDOK: Dodaj Pojazd -->
+        <div v-if="currentView === 'add_vehicle'">
+          <h5 class="fw-bold text-center mb-4">Dodaj nowy pojazd</h5>
+          <form @submit.prevent="saveVehicle">
+            <div class="mb-3">
+              <input type="text" class="form-control form-control-custom" v-model="newVehicle.make" placeholder="Marka (np. Ford)" required>
+            </div>
+            <div class="mb-3">
+              <input type="text" class="form-control form-control-custom" v-model="newVehicle.model" placeholder="Model (np. Focus)" required>
+            </div>
+            <div class="mb-3">
+              <input type="number" class="form-control form-control-custom" v-model="newVehicle.year" placeholder="Rok produkcji" min="1899" :max="currentYear" required>
+            </div>
+            <div class="mb-4">
+              <input type="number" class="form-control form-control-custom" v-model="newVehicle.mileage" placeholder="Aktualny przebieg (km)" min="0" required>
+            </div>
+            <button type="submit" class="btn btn-primary-custom w-100 mb-2">Zapisz pojazd</button>
+            <button type="button" class="btn btn-light w-100" @click="currentView = 'vehicles'">Anuluj</button>
+          </form>
+        </div>
+
+        <!-- WIDOK: Dane i Szczegóły Pojazdu -->
+        <div v-if="currentView === 'details'">
+          <div v-if="!activeVehicle" class="text-center py-5">
+            <h6 class="text-muted">Proszę wybrać pojazd w zakładce Pojazdy.</h6>
+            <button class="btn btn-primary-custom mt-3" @click="currentView = 'vehicles'">Przejdź do pojazdów</button>
+          </div>
+          <div v-else>
+            <h5 class="fw-bold text-center mb-4">Szczegóły pojazdu</h5>
+            <form @submit.prevent="updateVehicleDetails">
+              
+              <!-- Podstawowe -->
+              <h6 class="fw-bold text-muted small text-uppercase mb-2 ms-1">Dane podstawowe</h6>
+              <div class="bg-white p-3 rounded-4 shadow-sm mb-4">
+                <div class="mb-3">
+                  <label class="small text-muted mb-1">Numer rejestracyjny</label>
+                  <input type="text" class="form-control form-control-custom" v-model="activeVehicle.registration" placeholder="np. WX 12345">
+                </div>
+                <div>
+                  <label class="small text-muted mb-1">Numer VIN</label>
+                  <input type="text" class="form-control form-control-custom text-uppercase" v-model="activeVehicle.vin" placeholder="17 znaków VIN">
+                </div>
+              </div>
+
+              <!-- Ważne daty i ubezpieczenie -->
+              <h6 class="fw-bold text-muted small text-uppercase mb-2 ms-1">Ważne daty i polisy</h6>
+              <div class="bg-white p-3 rounded-4 shadow-sm mb-4">
+                <div class="mb-3">
+                  <label class="small text-muted mb-1">Przegląd techniczny do:</label>
+                  <input type="date" class="form-control form-control-custom" v-model="activeVehicle.inspectionDate">
+                </div>
+                <hr class="text-muted">
+                <div class="mb-3">
+                  <label class="small text-muted mb-1">Ubezpieczyciel (np. PZU, Warta)</label>
+                  <input type="text" class="form-control form-control-custom" v-model="activeVehicle.insuranceCompany" placeholder="Nazwa ubezpieczalni">
+                </div>
+                <div>
+                  <label class="small text-muted mb-1">Ubezpieczenie (OC/AC) do:</label>
+                  <input type="date" class="form-control form-control-custom" v-model="activeVehicle.insuranceDate">
+                </div>
+              </div>
+
+              <!-- Notatki -->
+              <h6 class="fw-bold text-muted small text-uppercase mb-2 ms-1">Notatki techniczne</h6>
+              <div class="bg-white p-3 rounded-4 shadow-sm mb-4">
+                <textarea class="form-control form-control-custom" v-model="activeVehicle.notes" rows="4" placeholder="np. Rozmiar opon zimowych: 205/55 R16, rodzaj oleju: 5W-30..."></textarea>
+              </div>
+
+              <button type="submit" class="btn btn-primary-custom w-100 mb-2">Zapisz zmiany</button>
+            </form>
+          </div>
+        </div>
+
+        <!-- WIDOK: Powiadomienia -->
+        <div v-if="currentView === 'notifications'">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h4 class="fw-bold mb-0">Powiadomienia</h4>
+            <a href="#" class="text-decoration-none small fw-bold" style="color: var(--brand-orange);" @click.prevent="notifications = []">Oznacz jako przeczytane</a>
+          </div>
+
+          <div v-if="notifications.length === 0" class="text-center py-5 text-muted">
+            <i class="fa-regular fa-bell-slash fs-1 mb-3"></i>
+            <p>Brak nowych powiadomień.</p>
+          </div>
+
+          <div class="notification-list">
+            <div class="notification-item align-items-start" v-for="notif in notifications" :key="notif.id">
+              <div :class="['notification-icon', notif.iconBgClass]">
+                <i :class="notif.icon"></i>
+              </div>
+              <div class="flex-grow-1">
+                <div class="d-flex justify-content-between">
+                  <div class="fw-bold small">{{ notif.title }}</div>
+                  <div class="text-muted" style="font-size: 0.65rem;">{{ notif.time }}</div>
+                </div>
+                <div class="text-muted mt-1" style="font-size: 0.8rem; line-height: 1.4;">
+                  {{ notif.text }}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- WIDOK: Historia Wydatków -->
+        <div v-if="currentView === 'history'">
+          <div v-if="!activeVehicle" class="text-center py-5">
+            <h6 class="text-muted">Proszę wybrać pojazd w zakładce Pojazdy.</h6>
+          </div>
+          <div v-else>
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h6 class="fw-bold mb-0">Historia wydatków</h6>
+              <i class="fa-solid fa-filter text-muted" style="color: var(--brand-orange) !important;"></i>
+            </div>
+
+            <div v-if="activeVehicleExpenses.length === 0" class="text-center text-muted small py-4">
+              Brak wydatków dla tego pojazdu.
+            </div>
+
+            <div class="expense-list">
+              <div class="expense-item align-items-start" v-for="expense in activeVehicleExpenses" :key="expense.id">
+                <div class="expense-icon mt-1"><i :class="expense.icon"></i></div>
+                <div class="flex-grow-1">
+                  <div class="fw-bold">{{ expense.title }}</div>
+                  <div class="text-muted mb-1" style="font-size: 0.75rem;">{{ expense.date }} | {{ expense.mileage }} km</div>
+                  <div v-if="expense.description" class="text-muted fst-italic" style="font-size: 0.8rem;">
+                    {{ expense.description }}
+                  </div>
+                  <div v-if="expense.liters" class="text-muted" style="font-size: 0.8rem;">
+                    {{ expense.liters }} L ({{ expense.pricePerLiter }} zł/L)
+                  </div>
+                </div>
+                <div class="fw-bold text-nowrap ms-2">{{ expense.amount }} zł</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- WIDOK: Dodaj Wydatek -->
+        <div v-if="currentView === 'add'">
+          <div v-if="!activeVehicle" class="text-center py-5">
+            <h6 class="text-muted">Aby dodać wydatek, wybierz pojazd.</h6>
+            <button class="btn btn-primary-custom mt-3" @click="currentView = 'vehicles'">Przejdź do pojazdów</button>
+          </div>
+          <div v-else>
+            <h5 class="fw-bold text-center mb-4">Nowy wydatek</h5>
+            <form @submit.prevent="saveExpense">
+              <div class="bg-white p-3 rounded-4 mb-4 text-center border">
+                <div class="text-muted small mb-2">KWOTA CAŁKOWITA (PLN)</div>
+                <input type="number" step="0.01" class="form-control text-center border-0 fw-bold fs-2 p-0" placeholder="0.00 PLN" v-model="newExpense.amount" @input="calcFuel('amount')" required>
+                <hr class="w-50 mx-auto mt-0">
+              </div>
+
+              <div class="mb-4">
+                <div class="text-muted small mb-2 text-uppercase" style="font-size: 0.7rem;">Kategoria</div>
+                <div class="d-flex justify-content-between">
+                  <div class="category-btn" :class="{ active: newExpense.category === 'paliwo' }" @click="newExpense.category = 'paliwo'">
+                    <i class="fa-solid fa-gas-pump"></i><br>Paliwo
+                  </div>
+                  <div class="category-btn" :class="{ active: newExpense.category === 'serwis' }" @click="newExpense.category = 'serwis'">
+                    <i class="fa-solid fa-wrench"></i><br>Serwis
+                  </div>
+                  <div class="category-btn" :class="{ active: newExpense.category === 'inne' }" @click="newExpense.category = 'inne'">
+                    <i class="fa-solid fa-ellipsis"></i><br>Inne
+                  </div>
+                </div>
+              </div>
+
+              <div v-if="newExpense.category === 'paliwo'" class="row g-2 mb-3">
+                <div class="col-6">
+                  <label class="small text-muted mb-1">Cena za litr (zł)</label>
+                  <input type="number" step="0.01" class="form-control form-control-custom" placeholder="np. 6.50" v-model="newExpense.pricePerLiter" @input="calcFuel('price')">
+                </div>
+                <div class="col-6">
+                  <label class="small text-muted mb-1">Ilość paliwa (L)</label>
+                  <input type="number" step="0.01" class="form-control form-control-custom" placeholder="np. 40.5" v-model="newExpense.liters" @input="calcFuel('liters')">
+                </div>
+              </div>
+
+              <div v-if="newExpense.category === 'serwis' || newExpense.category === 'inne'" class="mb-3">
+                <label class="small text-muted mb-1">Opis (opcjonalnie)</label>
+                <input type="text" class="form-control form-control-custom" placeholder="Krótki opis wydatku" v-model="newExpense.description">
+              </div>
+
+              <div class="row g-2 mb-4 mt-1">
+                <div class="col-6">
+                  <div class="form-control-custom bg-white d-flex align-items-center">
+                    <i class="fa-solid fa-gauge text-muted me-2"></i>
+                    <input type="number" class="form-control border-0 p-0" placeholder="Przebieg" v-model="newExpense.mileage" required>
+                  </div>
+                </div>
+                <div class="col-6">
+                  <div class="form-control-custom bg-white d-flex align-items-center">
+                    <input type="date" class="form-control border-0 p-0" v-model="newExpense.date" required>
+                  </div>
+                </div>
+              </div>
+
+              <button type="submit" class="btn btn-primary-custom w-100">Zapisz wydatek</button>
+            </form>
+          </div>
+        </div>
+
+        <!-- WIDOK: Mapa (OpenStreetMap + GPS) -->
+        <div v-show="currentView === 'map'" class="h-100">
+          <div id="osm-map"></div>
+        </div>
+
+      </main>
+
+      <!-- Dolny Pasek Nawigacji -->
+      <nav class="bottom-nav shadow-lg">
+        <a class="nav-item" :class="{ active: currentView === 'map' }" @click.prevent="currentView = 'map'">
+          <i class="fa-regular fa-map"></i>
+          Mapa
+        </a>
+        <a class="nav-item" :class="{ active: currentView === 'add' }" @click.prevent="currentView = 'add'">
+          <i class="fa-solid fa-circle-plus"></i>
+          Wydatek
+        </a>
+        <a class="nav-item" :class="{ active: currentView === 'history' }" @click.prevent="currentView = 'history'">
+          <i class="fa-solid fa-clock-rotate-left"></i>
+          Historia
+        </a>
+        <a class="nav-item" :class="{ active: currentView === 'details' }" @click.prevent="currentView = 'details'">
+          <i class="fa-solid fa-file-lines"></i>
+          Dane
+        </a>
+        <a class="nav-item" :class="{ active: currentView === 'vehicles' }" @click.prevent="currentView = 'vehicles'">
+          <i class="fa-solid fa-car"></i>
+          Pojazdy
+        </a>
+      </nav>
+    </template>
+
+  </div>
+
+  <script>
+    const { createApp, ref, reactive, onMounted, watch, nextTick, computed } = Vue;
+
+    createApp({
+      setup() {
+        const currentView = ref('login');
+        const currentYear = new Date().getFullYear();
+        
+        const loginForm = reactive({ email: '', password: '' });
+        
+        const vehicles = ref([]);
+        const expenses = ref([]);
+        const activeVehicleId = ref(null);
+
+        const notifications = ref([
+          { id: 1, iconBgClass: 'icon-danger', icon: 'fa-solid fa-car-burst', title: 'Przegląd techniczny za 5 dni', text: 'Twój pojazd wymaga okresowego badania technicznego. Umów wizytę w najbliższej stacji kontroli.', time: 'Dzisiaj, 08:30' },
+          { id: 2, iconBgClass: 'icon-warning', icon: 'fa-solid fa-gauge-high', title: 'Niskie ciśnienie w oponach', text: 'Wykryto spadek ciśnienia w prawym przednim kole. Zalecamy dopompowanie opon na stacji.', time: 'Wczoraj, 14:15' },
+          { id: 3, iconBgClass: 'icon-promo', icon: 'fa-solid fa-gas-pump', title: 'Nowa promocja na paliwo', text: 'Skorzystaj z weekendowej zniżki na paliwa premium na stacjach partnerskich.', time: '12 Maj, 09:00' }
+        ]);
+
+        const todayStr = new Date().toISOString().split('T')[0];
+
+        const newVehicle = reactive({ make: '', model: '', year: '', mileage: '' });
+        const newExpense = reactive({ 
+          amount: '', category: 'paliwo', mileage: '', date: todayStr,
+          description: '', pricePerLiter: '', liters: ''
+        });
+
+        const activeVehicle = computed(() => vehicles.value.find(v => v.id === activeVehicleId.value));
+        const activeVehicleExpenses = computed(() => {
+          return expenses.value
+            .filter(e => e.vehicleId === activeVehicleId.value)
+            .sort((a, b) => b.id - a.id);
+        });
+
+        onMounted(() => {
+          const savedVehicles = localStorage.getItem('motolog_vehicles');
+          const savedExpenses = localStorage.getItem('motolog_expenses');
+          
+          if (savedVehicles) vehicles.value = JSON.parse(savedVehicles);
+          if (savedExpenses) expenses.value = JSON.parse(savedExpenses);
+          
+          if (vehicles.value.length > 0) {
+            activeVehicleId.value = vehicles.value[0].id;
+          }
+        });
+
+        watch(vehicles, (newVal) => localStorage.setItem('motolog_vehicles', JSON.stringify(newVal)), { deep: true });
+        watch(expenses, (newVal) => localStorage.setItem('motolog_expenses', JSON.stringify(newVal)), { deep: true });
+
+        const login = () => {
+          console.log('Logowanie dla:', loginForm);
+          currentView.value = 'vehicles'; 
+        };
+
+        const saveVehicle = () => {
+          if (newVehicle.year < 1899 || newVehicle.year > currentYear) {
+            alert(`Rok produkcji musi być między 1899 a ${currentYear}.`);
+            return;
+          }
+          if (newVehicle.mileage < 0) {
+            alert('Przebieg nie może być ujemny.');
+            return;
+          }
+
+          console.log('Nowy pojazd:', newVehicle);
+          const id = Date.now();
+          
+          // Zapisanie pojazdu z dodatkowymi, opcjonalnymi polami gotowymi do edycji w "Danych"
+          vehicles.value.push({ 
+            id, 
+            ...newVehicle,
+            registration: '',
+            vin: '',
+            insuranceCompany: '',
+            insuranceDate: '',
+            inspectionDate: '',
+            notes: ''
+          });
+          
+          activeVehicleId.value = id;
+          newVehicle.make = ''; newVehicle.model = ''; newVehicle.year = ''; newVehicle.mileage = '';
+          currentView.value = 'vehicles';
+        };
+
+        const updateVehicleDetails = () => {
+          if(navigator.vibrate) navigator.vibrate(100);
+          alert('Zapisano szczegóły pojazdu!');
+        };
+
+        const selectVehicle = (id) => {
+          activeVehicleId.value = id;
+          currentView.value = 'history';
+        };
+
+        const calcFuel = (changedField) => {
+          let a = parseFloat(newExpense.amount);
+          let p = parseFloat(newExpense.pricePerLiter);
+          let l = parseFloat(newExpense.liters);
+
+          if (changedField === 'amount') {
+            if (!isNaN(a) && !isNaN(p) && p > 0) newExpense.liters = (a / p).toFixed(2);
+            else if (!isNaN(a) && !isNaN(l) && l > 0) newExpense.pricePerLiter = (a / l).toFixed(2);
+          } else if (changedField === 'price') {
+            if (!isNaN(p) && !isNaN(l) && l > 0) newExpense.amount = (p * l).toFixed(2);
+            else if (!isNaN(p) && !isNaN(a) && p > 0) newExpense.liters = (a / p).toFixed(2);
+          } else if (changedField === 'liters') {
+            if (!isNaN(l) && !isNaN(p) && p > 0) newExpense.amount = (l * p).toFixed(2);
+            else if (!isNaN(l) && !isNaN(a) && l > 0) newExpense.pricePerLiter = (a / l).toFixed(2);
+          }
+        };
+
+        const saveExpense = () => {
+          console.log('Zapisywanie wydatku:', newExpense);
+          
+          let iconClass = 'fa-solid fa-ellipsis';
+          if(newExpense.category === 'paliwo') iconClass = 'fa-solid fa-gas-pump';
+          if(newExpense.category === 'serwis') iconClass = 'fa-solid fa-wrench';
+
+          if (activeVehicle.value && newExpense.mileage > activeVehicle.value.mileage) {
+            activeVehicle.value.mileage = newExpense.mileage;
+          }
+
+          expenses.value.push({
+            id: Date.now(),
+            vehicleId: activeVehicleId.value,
+            title: newExpense.category.charAt(0).toUpperCase() + newExpense.category.slice(1),
+            date: newExpense.date,
+            amount: `- ${parseFloat(newExpense.amount).toFixed(2)}`,
+            icon: iconClass,
+            mileage: newExpense.mileage,
+            description: newExpense.category !== 'paliwo' ? newExpense.description : null,
+            liters: newExpense.category === 'paliwo' ? newExpense.liters : null,
+            pricePerLiter: newExpense.category === 'paliwo' ? newExpense.pricePerLiter : null
+          });
+
+          if(navigator.vibrate) navigator.vibrate(100);
+
+          newExpense.amount = ''; newExpense.description = ''; newExpense.pricePerLiter = ''; newExpense.liters = '';
+          currentView.value = 'history';
+        };
+
+        let mapInstance = null;
+        const initMap = async () => {
+          await nextTick();
+          if(!mapInstance) {
+            mapInstance = L.map('osm-map').setView([52.2297, 21.0122], 12);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+              attribution: '© OpenStreetMap'
+            }).addTo(mapInstance);
+          }
+
+          if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+              (pos) => {
+                const lat = pos.coords.latitude;
+                const lng = pos.coords.longitude;
+                mapInstance.setView([lat, lng], 15);
+                L.marker([lat, lng]).addTo(mapInstance).bindPopup('Tu jesteś!').openPopup();
+              }, 
+              (err) => console.warn('Błąd pobierania lokalizacji GPS', err),
+              { enableHighAccuracy: true }
+            );
+          }
+        };
+
+        watch(currentView, (newVal) => {
+          if (newVal === 'map') {
+            initMap();
+            setTimeout(() => { if(mapInstance) mapInstance.invalidateSize(); }, 100);
+          }
+        });
+
+        return {
+          currentYear,
+          currentView,
+          loginForm,
+          newVehicle,
+          newExpense,
+          vehicles,
+          expenses,
+          notifications,
+          activeVehicleId,
+          activeVehicle,
+          activeVehicleExpenses,
+          login,
+          saveVehicle,
+          updateVehicleDetails,
+          selectVehicle,
+          saveExpense,
+          calcFuel
+        };
+      }
+    }).mount('#app');
+  </script>
+</body>
+</html>
