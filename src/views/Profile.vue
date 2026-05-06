@@ -4,10 +4,11 @@
 
     <div class="bg-white p-4 rounded-4 shadow-sm text-center mb-4">
       <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px;">
-        <i class="fa-solid fa-user fs-1 text-secondary"></i>
+        <img v-if="currentUser?.photoURL" :src="currentUser.photoURL" alt="Profile" class="rounded-circle w-100 h-100" style="object-fit: cover;">
+        <i v-else class="fa-solid fa-user fs-1 text-secondary"></i>
       </div>
-      <h5 class="fw-bold mb-1">Kierowca</h5>
-      <p class="text-muted small">kierowca@motolog.pl</p>
+      <h5 class="fw-bold mb-1">{{ currentUser?.displayName || 'Kierowca' }}</h5>
+      <p class="text-muted small">{{ currentUser?.email }}</p>
     </div>
 
     <div class="bg-white p-3 rounded-4 shadow-sm mb-4">
@@ -32,12 +33,19 @@
 
 <script setup>
 import { useRouter } from 'vue-router';
+import { auth } from '../firebase.js';
+import { signOut } from 'firebase/auth';
+import { currentUser } from '../store.js';
 
 const router = useRouter();
 
-const logout = () => {
-  // Tymczasowe wylogowanie - powrót do logowania
-  console.log('Wylogowano');
-  router.push('/');
+const logout = async () => {
+  try {
+    await signOut(auth);
+    currentUser.value = null;
+    router.push('/');
+  } catch (error) {
+    console.error('Błąd przy wylogowywaniu:', error);
+  }
 };
 </script>

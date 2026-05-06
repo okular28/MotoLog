@@ -57,13 +57,13 @@
 <script setup>
 import { onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { loadData, activeVehicle, notifications } from './store.js';
+import { initAuth, activeVehicle, notifications, currentUser } from './store.js';
 
 const route = useRoute();
 const router = useRouter();
 
 onMounted(() => {
-  loadData();
+  initAuth(router);
 });
 </script>
 

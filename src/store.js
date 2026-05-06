@@ -1,9 +1,12 @@
 import { ref, reactive, computed, watch } from 'vue';
+import { auth, db } from './firebase.js';
+import { onAuthStateChanged } from 'firebase/auth';
+import { collection, query, where, getDocs, addDoc, serverTimestamp } from 'firebase/firestore';
 
 const currentYear = new Date().getFullYear();
 const todayStr = new Date().toISOString().split('T')[0];
 
-export const currentUser = ref({ email: 'kierowca@motolog.pl', displayName: 'Kierowca' });
+export const currentUser = ref(null);
 export const vehicles = ref([]);
 export const expenses = ref([]);
 export const activeVehicleId = ref(null);
@@ -21,20 +24,40 @@ export const activeVehicleExpenses = computed(() => {
     .sort((a, b) => b.id - a.id);
 });
 
-export const loadData = () => {
-  const savedVehicles = localStorage.getItem('motolog_vehicles');
-  const savedExpenses = localStorage.getItem('motolog_expenses');
+export const loadData = async () => {
+  if (!currentUser.value) return;
   
-  if (savedVehicles) vehicles.value = JSON.parse(savedVehicles);
-  if (savedExpenses) expenses.value = JSON.parse(savedExpenses);
-  
-  if (vehicles.value.length > 0) {
-    activeVehicleId.value = vehicles.value[0].id;
+  try {
+    const qVehicles = query(collection(db, 'vehicles'), where('userId', '==', currentUser.value.uid));
+    const querySnapshotV = await getDocs(qVehicles);
+    vehicles.value = querySnapshotV.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+    const qExpenses = query(collection(db, 'expenses'), where('userId', '==', currentUser.value.uid));
+    const querySnapshotE = await getDocs(qExpenses);
+    expenses.value = querySnapshotE.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+    if (vehicles.value.length > 0) {
+      activeVehicleId.value = vehicles.value[0].id;
+    }
+  } catch (error) {
+    console.error("Błąd podczas pobierania danych z Firestore:", error);
   }
 };
 
-watch(vehicles, (newVal) => localStorage.setItem('motolog_vehicles', JSON.stringify(newVal)), { deep: true });
-watch(expenses, (newVal) => localStorage.setItem('motolog_expenses', JSON.stringify(newVal)), { deep: true });
+export const initAuth = (router) => {
+  onAuthStateChanged(auth, (user) => {
+    currentUser.value = user;
+    if (user) {
+      loadData();
+    } else {
+      vehicles.value = [];
+      expenses.value = [];
+      if (router && router.currentRoute.value.name !== 'Login') {
+        router.push('/');
+      }
+    }
+  });
+};
 
 export const getTodayStr = () => todayStr;
 export const getCurrentYear = () => currentYear;

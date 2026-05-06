@@ -58,18 +58,24 @@
           </div>
         </div>
 
-        <button type="submit" class="btn btn-primary-custom w-100">Zapisz wydatek</button>
+        <button type="submit" class="btn btn-primary-custom w-100" :disabled="isLoading">
+          <span v-if="isLoading" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+          Zapisz wydatek
+        </button>
       </form>
     </div>
   </div>
 </template>
 
 <script setup>
-import { reactive } from 'vue';
+import { reactive, ref } from 'vue';
 import { useRouter } from 'vue-router';
-import { activeVehicle, expenses, activeVehicleId, getTodayStr } from '../store.js';
+import { activeVehicle, activeVehicleId, getTodayStr, currentUser, loadData } from '../store.js';
+import { db } from '../firebase.js';
+import { collection, addDoc, serverTimestamp, doc, updateDoc } from 'firebase/firestore';
 
 const router = useRouter();
+const isLoading = ref(false);
 
 const newExpense = reactive({ 
   amount: '', category: 'paliwo', mileage: '', date: getTodayStr(),
@@ -93,31 +99,53 @@ const calcFuel = (changedField) => {
   }
 };
 
-const saveExpense = () => {
+const saveExpense = async () => {
+  if (!currentUser.value || !activeVehicleId.value) return;
+  isLoading.value = true;
+
   let iconClass = 'fa-solid fa-ellipsis';
   if(newExpense.category === 'paliwo') iconClass = 'fa-solid fa-gas-pump';
   if(newExpense.category === 'serwis') iconClass = 'fa-solid fa-wrench';
 
-  if (activeVehicle.value && newExpense.mileage > activeVehicle.value.mileage) {
-    activeVehicle.value.mileage = newExpense.mileage;
+  try {
+    const expenseData = {
+      vehicleId: activeVehicleId.value,
+      userId: currentUser.value.uid,
+      title: newExpense.category.charAt(0).toUpperCase() + newExpense.category.slice(1),
+      category: newExpense.category,
+      amount: parseFloat(newExpense.amount).toFixed(2),
+      date: newExpense.date,
+      icon: iconClass,
+      mileage: parseInt(newExpense.mileage),
+      description: newExpense.category !== 'paliwo' ? newExpense.description : null,
+      createdAt: serverTimestamp()
+    };
+
+    if (newExpense.category === 'paliwo') {
+      expenseData.fuelDetails = {
+        liters: parseFloat(newExpense.liters) || 0,
+        pricePerLiter: parseFloat(newExpense.pricePerLiter) || 0
+      };
+    }
+
+    await addDoc(collection(db, "expenses"), expenseData);
+
+    // Zaktualizowanie przebiegu pojazdu jeśli jest wyższy
+    if (activeVehicle.value && newExpense.mileage > activeVehicle.value.mileage) {
+      const vRef = doc(db, "vehicles", activeVehicleId.value);
+      await updateDoc(vRef, { mileage: parseInt(newExpense.mileage) });
+    }
+
+    if(navigator.vibrate) navigator.vibrate(100);
+
+    newExpense.amount = ''; newExpense.description = ''; newExpense.pricePerLiter = ''; newExpense.liters = '';
+    await loadData(); // Pobiera najnowsze wydatki z Firestore, aby odświeżyć historię kosztów
+    router.push('/history');
+  } catch (error) {
+    console.error("Błąd podczas zapisywania wydatku:", error);
+    alert('Wystąpił błąd podczas dodawania wydatku.');
+  } finally {
+    isLoading.value = false;
   }
-
-  expenses.value.push({
-    id: Date.now(),
-    vehicleId: activeVehicleId.value,
-    title: newExpense.category.charAt(0).toUpperCase() + newExpense.category.slice(1),
-    date: newExpense.date,
-    amount: `- ${parseFloat(newExpense.amount).toFixed(2)}`,
-    icon: iconClass,
-    mileage: newExpense.mileage,
-    description: newExpense.category !== 'paliwo' ? newExpense.description : null,
-    liters: newExpense.category === 'paliwo' ? newExpense.liters : null,
-    pricePerLiter: newExpense.category === 'paliwo' ? newExpense.pricePerLiter : null
-  });
-
-  if(navigator.vibrate) navigator.vibrate(100);
-
-  newExpense.amount = ''; newExpense.description = ''; newExpense.pricePerLiter = ''; newExpense.liters = '';
-  router.push('/history');
 };
 </script>

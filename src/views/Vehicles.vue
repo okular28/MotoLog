@@ -9,17 +9,23 @@
 
     <div v-else class="expense-list mb-4">
       <div 
-        class="vehicle-item" 
+        class="vehicle-item d-flex align-items-center justify-content-between p-3 mb-2 border rounded-4" 
         v-for="v in vehicles" 
         :key="v.id" 
         :class="{'active-vehicle': activeVehicleId === v.id}"
+        style="cursor: pointer;"
         @click="selectVehicle(v.id)">
-        <div class="expense-icon"><i class="fa-solid fa-car-side"></i></div>
-        <div class="flex-grow-1">
-          <div class="fw-bold">{{ v.make }} {{ v.model }}</div>
-          <div class="text-muted small">Rocznik: {{ v.year }} | Przebieg: {{ v.mileage }} km</div>
+        <div class="d-flex align-items-center flex-grow-1">
+          <div class="expense-icon me-3"><i class="fa-solid fa-car-side"></i></div>
+          <div>
+            <div class="fw-bold">{{ v.make }} {{ v.model }}</div>
+            <div class="text-muted small">Rocznik: {{ v.year }} | Przebieg: {{ v.mileage }} km</div>
+          </div>
         </div>
-        <i class="fa-solid fa-chevron-right text-muted"></i>
+        <div class="d-flex align-items-center gap-3">
+          <i class="fa-solid fa-trash-can text-danger fs-5" style="cursor: pointer; padding: 5px;" @click.stop="deleteVehicle(v.id, `${v.make} ${v.model}`)"></i>
+          <i class="fa-solid fa-chevron-right text-muted"></i>
+        </div>
       </div>
     </div>
 
@@ -31,12 +37,39 @@
 
 <script setup>
 import { useRouter } from 'vue-router';
-import { vehicles, activeVehicleId } from '../store.js';
+import { vehicles, activeVehicleId, loadData } from '../store.js';
+import { db } from '../firebase.js';
+import { doc, deleteDoc } from 'firebase/firestore';
 
 const router = useRouter();
 
 const selectVehicle = (id) => {
   activeVehicleId.value = id;
   router.push('/history');
+};
+
+const deleteVehicle = async (id, name) => {
+  if (!confirm(`Czy na pewno chcesz usunąć pojazd ${name}? Usunie to również wszystkie przypisane do niego dane z bazy.`)) {
+    return;
+  }
+
+  try {
+    await deleteDoc(doc(db, "vehicles", id));
+    
+    // Jeśli usunięto obecnie aktywny pojazd, resetujemy jego wybór
+    if (activeVehicleId.value === id) {
+      activeVehicleId.value = null;
+    }
+
+    await loadData(); // Pobieramy na nowo listę pojazdów z Firestore
+
+    // Jeśli po usunięciu nadal mamy inne auta, a aktywny jest null, ustawmy pierwsze z brzegu jako aktywne
+    if (vehicles.value.length > 0 && !activeVehicleId.value) {
+      activeVehicleId.value = vehicles.value[0].id;
+    }
+  } catch (error) {
+    console.error("Błąd podczas usuwania pojazdu:", error);
+    alert("Wystąpił błąd podczas usuwania pojazdu.");
+  }
 };
 </script>
