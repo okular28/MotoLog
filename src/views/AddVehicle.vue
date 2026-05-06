@@ -18,7 +18,7 @@
         <span v-if="isLoading" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
         Zapisz pojazd
       </button>
-      <button type="button" class="btn btn-light w-100" @click="router.push('/vehicles')">Anuluj</button>
+      <button type="button" class="btn btn-secondary-custom w-100" @click="router.push('/vehicles')">Anuluj</button>
     </form>
   </div>
 </template>

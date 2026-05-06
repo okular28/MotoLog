@@ -46,11 +46,26 @@ body {
 
 .btn-google {
   background-color: white;
-  border: 1px solid #ddd;
-  color: var(--text-main);
+  border: 1px solid var(--brand-orange);
+  color: var(--brand-orange);
   border-radius: 10px;
   padding: 12px;
-  font-weight: 500;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+.btn-google:hover, .btn-secondary-custom:hover {
+  background-color: var(--brand-orange);
+  color: white;
+}
+
+.btn-secondary-custom {
+  background-color: white;
+  border: 1px solid var(--brand-orange);
+  color: var(--brand-orange);
+  border-radius: 10px;
+  padding: 12px;
+  font-weight: 600;
+  transition: all 0.2s ease;
 }
 
 .form-control-custom {
@@ -62,6 +77,51 @@ body {
 .form-control-custom:focus {
   border-color: var(--brand-orange);
   box-shadow: none;
+}
+
+/* Globalne style dla pól i przycisków w motywie pomarańczowym */
+.form-control:focus, .form-select:focus, .form-control-custom:focus {
+  border-color: var(--brand-orange) !important;
+  box-shadow: 0 0 0 0.25rem rgba(255, 118, 26, 0.25) !important;
+}
+
+.input-group:focus-within .input-group-text {
+  border-color: var(--brand-orange) !important;
+  color: var(--brand-orange) !important;
+}
+
+.input-group-text {
+  transition: border-color 0.15s ease-in-out, color 0.15s ease-in-out;
+}
+
+.btn:focus {
+  box-shadow: 0 0 0 0.25rem rgba(255, 118, 26, 0.25) !important;
+}
+
+/* Nowoczesne grupy wejściowe z ikonami */
+.input-group {
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.01);
+}
+
+.input-group .input-group-text {
+  background-color: #ffffff !important;
+  border: 1px solid #e2e8f0;
+  border-right: none;
+  padding-right: 5px;
+  color: var(--text-muted);
+}
+
+.input-group .form-control {
+  border: 1px solid #e2e8f0;
+  border-left: none;
+  padding-left: 10px;
+}
+
+.input-group:focus-within .form-control,
+.input-group:focus-within .input-group-text {
+  border-color: var(--brand-orange) !important;
 }
 
 .top-bar {

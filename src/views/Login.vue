@@ -36,7 +36,7 @@
           <div class="text-center text-muted small mb-3">lub</div>
           
           <button type="button" @click="loginWithGoogle" class="btn btn-google w-100 d-flex align-items-center justify-content-center" :disabled="isLoading">
-            <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" alt="G" class="me-2" style="width: 18px;">
+            <i class="fa-brands fa-google me-2"></i>
             Zaloguj przez Google
           </button>
         </form>

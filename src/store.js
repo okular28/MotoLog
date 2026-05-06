@@ -10,6 +10,7 @@ export const currentUser = ref(null);
 export const vehicles = ref([]);
 export const expenses = ref([]);
 export const activeVehicleId = ref(null);
+export const isDataLoading = ref(false);
 
 export const notifications = ref([
   { id: 1, iconBgClass: 'icon-danger', icon: 'fa-solid fa-car-burst', title: 'Przegląd techniczny za 5 dni', text: 'Twój pojazd wymaga okresowego badania technicznego. Umów wizytę w najbliższej stacji kontroli.', time: 'Dzisiaj, 08:30' },
@@ -26,6 +27,7 @@ export const activeVehicleExpenses = computed(() => {
 
 export const loadData = async () => {
   if (!currentUser.value) return;
+  isDataLoading.value = true;
   
   try {
     const qVehicles = query(collection(db, 'vehicles'), where('userId', '==', currentUser.value.uid));
@@ -41,6 +43,8 @@ export const loadData = async () => {
     }
   } catch (error) {
     console.error("Błąd podczas pobierania danych z Firestore:", error);
+  } finally {
+    isDataLoading.value = false;
   }
 };
 

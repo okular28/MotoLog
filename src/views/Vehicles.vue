@@ -2,7 +2,14 @@
   <div>
     <h5 class="fw-bold mb-3">Moje pojazdy</h5>
     
-    <div v-if="vehicles.length === 0" class="text-center py-5">
+    <div v-if="isDataLoading" class="text-center py-5">
+      <div class="spinner-border text-warning" role="status" style="width: 3rem; height: 3rem;">
+        <span class="visually-hidden">Ładowanie...</span>
+      </div>
+      <p class="text-muted mt-2 small">Pobieranie Twoich pojazdów...</p>
+    </div>
+
+    <div v-else-if="vehicles.length === 0" class="text-center py-5">
       <i class="fa-solid fa-car-burst text-muted mb-3" style="font-size: 3rem;"></i>
       <h6 class="text-muted">Nie masz jeszcze żadnych pojazdów.</h6>
     </div>
@@ -37,7 +44,7 @@
 
 <script setup>
 import { useRouter } from 'vue-router';
-import { vehicles, activeVehicleId, loadData } from '../store.js';
+import { vehicles, activeVehicleId, loadData, isDataLoading } from '../store.js';
 import { db } from '../firebase.js';
 import { doc, deleteDoc } from 'firebase/firestore';
 

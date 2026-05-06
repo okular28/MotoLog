@@ -9,7 +9,14 @@
         <i class="fa-solid fa-filter text-muted" style="color: var(--brand-orange) !important;"></i>
       </div>
 
-      <div v-if="activeVehicleExpenses.length === 0" class="text-center text-muted small py-4">
+      <div v-if="isDataLoading" class="text-center py-5">
+        <div class="spinner-border text-warning" role="status" style="width: 2.5rem; height: 2.5rem;">
+          <span class="visually-hidden">Ładowanie...</span>
+        </div>
+        <p class="text-muted mt-2 small">Pobieranie historii wydatków...</p>
+      </div>
+
+      <div v-else-if="activeVehicleExpenses.length === 0" class="text-center text-muted small py-4">
         Brak wydatków dla tego pojazdu.
       </div>
 
@@ -34,5 +41,5 @@
 </template>
 
 <script setup>
-import { activeVehicle, activeVehicleExpenses } from '../store.js';
+import { activeVehicle, activeVehicleExpenses, isDataLoading } from '../store.js';
 </script>

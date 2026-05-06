@@ -11,20 +11,25 @@
     </div>
 
     <div class="notification-list">
-      <div class="notification-item align-items-start" v-for="notif in notifications" :key="notif.id">
-        <div :class="['notification-icon', notif.iconBgClass]">
-          <i :class="notif.icon"></i>
-        </div>
-        <div class="flex-grow-1">
-          <div class="d-flex justify-content-between">
-            <div class="fw-bold small">{{ notif.title }}</div>
-            <div class="text-muted" style="font-size: 0.65rem;">{{ notif.time }}</div>
+      <transition-group name="fade-list" tag="div">
+        <div class="notification-item align-items-start d-flex position-relative mb-3 p-3 bg-white rounded-4 border" v-for="notif in notifications" :key="notif.id">
+          <div :class="['notification-icon me-3', notif.iconBgClass]">
+            <i :class="notif.icon"></i>
           </div>
-          <div class="text-muted mt-1" style="font-size: 0.8rem; line-height: 1.4;">
-            {{ notif.text }}
+          <div class="flex-grow-1">
+            <div class="d-flex justify-content-between align-items-center">
+              <div class="fw-bold small">{{ notif.title }}</div>
+              <div class="text-muted" style="font-size: 0.65rem; margin-right: 1.5rem;">{{ notif.time }}</div>
+            </div>
+            <div class="text-muted mt-1" style="font-size: 0.8rem; line-height: 1.4;">
+              {{ notif.text }}
+            </div>
           </div>
+          <button class="btn border-0 p-0 position-absolute" style="top: 10px; right: 12px; color: var(--brand-orange);" @click="dismissNotification(notif.id)">
+            <i class="fa-solid fa-times small"></i>
+          </button>
         </div>
-      </div>
+      </transition-group>
     </div>
   </div>
 </template>
@@ -35,4 +40,20 @@ import { notifications } from '../store.js';
 const clearNotifications = () => {
   notifications.value = [];
 };
+
+const dismissNotification = (id) => {
+  notifications.value = notifications.value.filter(notif => notif.id !== id);
+};
 </script>
+
+<style scoped>
+.fade-list-enter-active,
+.fade-list-leave-active {
+  transition: all 0.3s ease;
+}
+.fade-list-enter-from,
+.fade-list-leave-to {
+  opacity: 0;
+  transform: translateX(-30px);
+}
+</style>
