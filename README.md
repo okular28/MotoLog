@@ -60,10 +60,3 @@ npm install
 # Uruchomienie lokalnego serwera deweloperskiego z ekspozycją na sieć lokalną (np. dla telefonu)
 npm run dev
 ```
-
-Serwer domyślnie uruchomi się na porcie: **`http://localhost:5173/`** lub **`http://localhost:5174/`**.
-
-*Aby otworzyć aplikację na telefonie, upewnij się, że telefon i komputer są w tej samej sieci Wi-Fi, a w przeglądarce telefonu wpisz adres IP komputera, np. `http://192.168.1.25:5174/`.*
-
----
-*Projekt zrealizowany z pasją dla maksymalnej wygody kierowców.*
