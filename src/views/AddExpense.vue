@@ -44,6 +44,30 @@
           <input type="text" class="form-control form-control-custom" placeholder="Krótki opis wydatku" v-model="newExpense.description">
         </div>
 
+        <div class="mb-3">
+          <label class="small text-muted mb-2 d-block">
+            <i class="fa-solid fa-camera me-1"></i> Zdjęcie paragonu (opcjonalnie)
+          </label>
+          <div class="d-flex gap-2 mb-2">
+            <button type="button" class="btn btn-secondary-custom flex-grow-1 py-2" @click="triggerCamera('camera')">
+              <i class="fa-solid fa-camera me-1"></i> Zrób zdjęcie teraz
+            </button>
+            <button type="button" class="btn btn-secondary-custom flex-grow-1 py-2" @click="triggerCamera('gallery')">
+              <i class="fa-solid fa-image me-1"></i> Wybierz z galerii
+            </button>
+          </div>
+          <!-- Ukryte pola do obsługi kamery/galerii -->
+          <input type="file" ref="cameraInput" accept="image/*" capture="environment" class="d-none" @change="handlePhotoUpload">
+          <input type="file" ref="galleryInput" accept="image/*" class="d-none" @change="handlePhotoUpload">
+          
+          <div v-if="newExpense.receiptBase64" class="mt-2 text-center position-relative d-inline-block">
+            <img :src="newExpense.receiptBase64" class="img-thumbnail rounded-4 shadow-sm" style="max-height: 120px; object-fit: cover;">
+            <button type="button" class="btn btn-danger btn-sm position-absolute top-0 end-0 m-1 rounded-circle d-flex align-items-center justify-content-center" style="width: 24px; height: 24px; padding: 0;" @click="newExpense.receiptBase64 = null">
+              <i class="fa-solid fa-times text-white" style="font-size: 10px;"></i>
+            </button>
+          </div>
+        </div>
+
         <div class="row g-2 mb-4 mt-1">
           <div class="col-6">
             <div class="form-control-custom bg-white d-flex align-items-center">
@@ -76,11 +100,48 @@ import { collection, addDoc, serverTimestamp, doc, updateDoc } from 'firebase/fi
 
 const router = useRouter();
 const isLoading = ref(false);
+const cameraInput = ref(null);
+const galleryInput = ref(null);
 
 const newExpense = reactive({ 
   amount: '', category: 'paliwo', mileage: '', date: getTodayStr(),
-  description: '', pricePerLiter: '', liters: ''
+  description: '', pricePerLiter: '', liters: '', receiptBase64: null
 });
+
+const triggerCamera = (type) => {
+  if (type === 'camera') {
+    cameraInput.value.click();
+  } else {
+    galleryInput.value.click();
+  }
+};
+
+const handlePhotoUpload = (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = (event) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      const MAX_WIDTH = 800;
+      let scaleSize = 1;
+      if (img.width > MAX_WIDTH) {
+        scaleSize = MAX_WIDTH / img.width;
+      }
+      canvas.width = img.width * scaleSize;
+      canvas.height = img.height * scaleSize;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      
+      // Kompresja do 60% jakości JPEG
+      newExpense.receiptBase64 = canvas.toDataURL('image/jpeg', 0.6); 
+    };
+    img.src = event.target.result;
+  };
+  reader.readAsDataURL(file);
+};
 
 const calcFuel = (changedField) => {
   let a = parseFloat(newExpense.amount);
@@ -102,10 +163,23 @@ const calcFuel = (changedField) => {
 const saveExpense = async () => {
   if (!currentUser.value || !activeVehicleId.value) return;
   isLoading.value = true;
+  if(navigator.vibrate) navigator.vibrate(50);
 
   let iconClass = 'fa-solid fa-ellipsis';
   if(newExpense.category === 'paliwo') iconClass = 'fa-solid fa-gas-pump';
   if(newExpense.category === 'serwis') iconClass = 'fa-solid fa-wrench';
+
+  let location = null;
+  if (navigator.geolocation) {
+    try {
+      const pos = await new Promise((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 6000 });
+      });
+      location = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+    } catch(e) {
+      console.warn('Nie udało się pobrać lokalizacji', e);
+    }
+  }
 
   try {
     const expenseData = {
@@ -118,6 +192,8 @@ const saveExpense = async () => {
       icon: iconClass,
       mileage: parseInt(newExpense.mileage),
       description: newExpense.category !== 'paliwo' ? newExpense.description : null,
+      location: location,
+      receiptBase64: newExpense.receiptBase64,
       createdAt: serverTimestamp()
     };
 
@@ -130,16 +206,15 @@ const saveExpense = async () => {
 
     await addDoc(collection(db, "expenses"), expenseData);
 
-    // Zaktualizowanie przebiegu pojazdu jeśli jest wyższy
     if (activeVehicle.value && newExpense.mileage > activeVehicle.value.mileage) {
       const vRef = doc(db, "vehicles", activeVehicleId.value);
       await updateDoc(vRef, { mileage: parseInt(newExpense.mileage) });
     }
 
-    if(navigator.vibrate) navigator.vibrate(100);
+    if(navigator.vibrate) navigator.vibrate([100, 50, 100]); // Silniejsza wibracja na sukces
 
-    newExpense.amount = ''; newExpense.description = ''; newExpense.pricePerLiter = ''; newExpense.liters = '';
-    await loadData(); // Pobiera najnowsze wydatki z Firestore, aby odświeżyć historię kosztów
+    newExpense.amount = ''; newExpense.description = ''; newExpense.pricePerLiter = ''; newExpense.liters = ''; newExpense.receiptBase64 = null;
+    await loadData(); 
     router.push('/history');
   } catch (error) {
     console.error("Błąd podczas zapisywania wydatku:", error);

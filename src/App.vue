@@ -23,7 +23,7 @@
         </div>
       </div>
 
-      <main class="content-area p-3" :class="{'p-0 h-100': route.name === 'Map'}">
+      <main class="content-area" :class="{'p-0 h-100': route.name === 'Map'}" :style="route.name === 'Map' ? 'overflow: hidden !important;' : ''">
         <router-view v-slot="{ Component }">
           <transition name="page-fade" mode="out-in">
             <component :is="Component" />

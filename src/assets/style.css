@@ -26,8 +26,9 @@ body {
 
 .content-area {
   flex-grow: 1;
+  min-height: 0; /* Naprawia błąd przewijania w flexboxie */
   overflow-y: auto;
-  padding-bottom: 80px; 
+  padding: 15px 15px 110px 15px; 
   background-color: var(--bg-light);
 }
 
@@ -239,3 +240,66 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   border-radius: 12px;
   z-index: 1;
 }
+
+/* --- Dark Mode Styles --- */
+body.dark-mode {
+  background-color: #121212 !important;
+  color: #e2e8f0 !important;
+}
+
+body.dark-mode .app-container {
+  background-color: #1a1a1a !important;
+}
+
+body.dark-mode .content-area {
+  background-color: #121212 !important;
+}
+
+body.dark-mode .bg-white,
+body.dark-mode .top-bar,
+body.dark-mode .bottom-nav,
+body.dark-mode .expense-item,
+body.dark-mode .vehicle-item,
+body.dark-mode .notification-item,
+body.dark-mode .form-control-custom,
+body.dark-mode .bg-light,
+body.dark-mode .modal-backdrop-custom > div {
+  background-color: #242424 !important;
+  color: #e2e8f0 !important;
+  border-color: #333333 !important;
+}
+
+body.dark-mode .text-dark,
+body.dark-mode h5,
+body.dark-mode h6,
+body.dark-mode .fw-bold {
+  color: #f7fafc !important;
+}
+
+body.dark-mode .text-muted,
+body.dark-mode .small {
+  color: #a0aec0 !important;
+}
+
+body.dark-mode input,
+body.dark-mode select,
+body.dark-mode textarea {
+  background-color: #242424 !important;
+  color: #e2e8f0 !important;
+  border-color: #333333 !important;
+}
+
+body.dark-mode .form-control-custom input {
+  background-color: transparent !important;
+  color: #e2e8f0 !important;
+}
+
+body.dark-mode hr {
+  background-color: #444444 !important;
+  opacity: 0.25;
+}
+
+body.dark-mode .modal-backdrop-custom {
+  background-color: rgba(0, 0, 0, 0.7) !important;
+}
+

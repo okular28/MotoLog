@@ -12,6 +12,13 @@ export const expenses = ref([]);
 export const activeVehicleId = ref(null);
 export const isDataLoading = ref(false);
 
+// PWA Install Prompt
+export const deferredPrompt = ref(window.deferredPromptEvent || null);
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt.value = e;
+});
+
 export const notifications = ref([
   { id: 1, iconBgClass: 'icon-danger', icon: 'fa-solid fa-car-burst', title: 'Przegląd techniczny za 5 dni', text: 'Twój pojazd wymaga okresowego badania technicznego. Umów wizytę w najbliższej stacji kontroli.', time: 'Dzisiaj, 08:30' },
   { id: 2, iconBgClass: 'icon-warning', icon: 'fa-solid fa-gauge-high', title: 'Niskie ciśnienie w oponach', text: 'Wykryto spadek ciśnienia w prawym przednim kole. Zalecamy dopompowanie opon na stacji.', time: 'Wczoraj, 14:15' },
@@ -38,7 +45,7 @@ export const loadData = async () => {
     const querySnapshotE = await getDocs(qExpenses);
     expenses.value = querySnapshotE.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
-    if (vehicles.value.length > 0) {
+    if (vehicles.value.length > 0 && (!activeVehicleId.value || !vehicles.value.some(v => v.id === activeVehicleId.value))) {
       activeVehicleId.value = vehicles.value[0].id;
     }
   } catch (error) {

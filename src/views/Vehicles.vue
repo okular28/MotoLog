@@ -17,15 +17,20 @@
     <div v-else class="expense-list mb-4">
       <div 
         class="vehicle-item d-flex align-items-center justify-content-between p-3 mb-2 border rounded-4" 
-        v-for="v in vehicles" 
+        v-for="v in sortedVehicles" 
         :key="v.id" 
         :class="{'active-vehicle': activeVehicleId === v.id}"
         style="cursor: pointer;"
         @click="selectVehicle(v.id)">
         <div class="d-flex align-items-center flex-grow-1">
-          <div class="expense-icon me-3"><i class="fa-solid fa-car-side"></i></div>
+          <div class="expense-icon me-3" :style="activeVehicleId === v.id ? 'background-color: var(--brand-orange) !important; color: white !important;' : ''">
+            <i class="fa-solid fa-car-side"></i>
+          </div>
           <div>
-            <div class="fw-bold">{{ v.make }} {{ v.model }}</div>
+            <div class="fw-bold d-flex align-items-center gap-2">
+              {{ v.make }} {{ v.model }}
+              <span v-if="activeVehicleId === v.id" class="badge text-white small" style="font-size: 0.65rem; background-color: var(--brand-orange);">Aktywny</span>
+            </div>
             <div class="text-muted small">Rocznik: {{ v.year }} | Przebieg: {{ v.mileage }} km</div>
           </div>
         </div>
@@ -39,44 +44,87 @@
     <button class="btn btn-primary-custom w-100" @click="router.push('/add-vehicle')">
       <i class="fa-solid fa-plus me-2"></i> Dodaj pojazd
     </button>
+
+    <!-- Customowe okno potwierdzenia usunięcia pojazdu -->
+    <div v-if="vehicleToDelete" class="modal-backdrop-custom d-flex align-items-center justify-content-center p-3">
+      <div class="bg-white p-4 rounded-4 shadow-lg text-center w-100" style="max-width: 400px; z-index: 1050;">
+        <div class="text-danger mb-3" style="font-size: 3rem;">
+          <i class="fa-solid fa-circle-exclamation animate__animated animate__pulse animate__infinite"></i>
+        </div>
+        <h5 class="fw-bold mb-2">Czy jesteś pewien?</h5>
+        <p class="text-muted small mb-4">Czy na pewno chcesz usunąć pojazd <b>{{ vehicleToDelete.name }}</b>? Stracisz bezpowrotnie wszystkie przypisane do niego wydatki i dane.</p>
+        <div class="d-flex gap-2">
+          <button class="btn btn-danger flex-grow-1 py-2 rounded-3 fw-bold" @click="confirmDeleteVehicle">Tak, usuń</button>
+          <button class="btn btn-secondary-custom flex-grow-1 py-2 rounded-3" @click="vehicleToDelete = null">Anuluj</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
+import { computed, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { vehicles, activeVehicleId, loadData, isDataLoading } from '../store.js';
 import { db } from '../firebase.js';
 import { doc, deleteDoc } from 'firebase/firestore';
 
 const router = useRouter();
+const vehicleToDelete = ref(null);
 
-const selectVehicle = (id) => {
+const sortedVehicles = computed(() => {
+  return [...vehicles.value].sort((a, b) => {
+    if (a.id === activeVehicleId.value) return -1;
+    if (b.id === activeVehicleId.value) return 1;
+    return 0;
+  });
+});
+
+const selectVehicle = async (id) => {
+  if(navigator.vibrate) navigator.vibrate(50);
   activeVehicleId.value = id;
-  router.push('/history');
+  await loadData(); // Pobiera dane i odświeża stan dla nowego aktywnego auta
 };
 
-const deleteVehicle = async (id, name) => {
-  if (!confirm(`Czy na pewno chcesz usunąć pojazd ${name}? Usunie to również wszystkie przypisane do niego dane z bazy.`)) {
-    return;
-  }
+const deleteVehicle = (id, name) => {
+  if(navigator.vibrate) navigator.vibrate(50);
+  vehicleToDelete.value = { id, name };
+};
 
+const confirmDeleteVehicle = async () => {
+  if (!vehicleToDelete.value) return;
+  const id = vehicleToDelete.value.id;
+  
   try {
     await deleteDoc(doc(db, "vehicles", id));
     
-    // Jeśli usunięto obecnie aktywny pojazd, resetujemy jego wybór
     if (activeVehicleId.value === id) {
       activeVehicleId.value = null;
     }
 
-    await loadData(); // Pobieramy na nowo listę pojazdów z Firestore
+    vehicleToDelete.value = null;
+    if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+    await loadData();
 
-    // Jeśli po usunięciu nadal mamy inne auta, a aktywny jest null, ustawmy pierwsze z brzegu jako aktywne
     if (vehicles.value.length > 0 && !activeVehicleId.value) {
       activeVehicleId.value = vehicles.value[0].id;
     }
   } catch (error) {
     console.error("Błąd podczas usuwania pojazdu:", error);
     alert("Wystąpił błąd podczas usuwania pojazdu.");
+    vehicleToDelete.value = null;
   }
 };
 </script>
+
+<style scoped>
+.modal-backdrop-custom {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 1040;
+}
+</style>

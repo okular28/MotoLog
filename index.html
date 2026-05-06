@@ -4,7 +4,16 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#ff761a">
+    <link rel="manifest" href="/manifest.json">
     <title>MotoLog & Find</title>
+    <script>
+      // Szybkie przechwycenie PWA prompt zanim załaduje się Vue
+      window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        window.deferredPromptEvent = e;
+      });
+    </script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   </head>
   <body>
