@@ -1,5 +1,10 @@
 <template>
   <div class="app-container">
+    <!-- Baner Offline -->
+    <div v-if="!isOnline" class="text-center py-2 px-3 small fw-bold shadow-sm" style="background-color: var(--brand-orange) !important; color: white !important; z-index: 2000; font-size: 0.78rem;">
+      <i class="fa-solid fa-wifi-slash me-2"></i> Pracujesz w trybie offline. Dane zsynchronizują się automatycznie.
+    </div>
+
     <!-- WIDOK: Logowanie (tylko na /) -->
     <router-view v-if="route.name === 'Login'"></router-view>
 
@@ -59,15 +64,27 @@
 </template>
 
 <script setup>
-import { onMounted } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { initAuth, activeVehicle, notifications, currentUser } from './store.js';
 
 const route = useRoute();
 const router = useRouter();
+const isOnline = ref(navigator.onLine);
+
+const updateOnlineStatus = () => {
+  isOnline.value = navigator.onLine;
+};
 
 onMounted(() => {
   initAuth(router);
+  window.addEventListener('online', updateOnlineStatus);
+  window.addEventListener('offline', updateOnlineStatus);
+});
+
+onUnmounted(() => {
+  window.removeEventListener('online', updateOnlineStatus);
+  window.removeEventListener('offline', updateOnlineStatus);
 });
 </script>
 

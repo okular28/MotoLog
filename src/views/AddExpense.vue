@@ -94,7 +94,7 @@
 <script setup>
 import { reactive, ref } from 'vue';
 import { useRouter } from 'vue-router';
-import { activeVehicle, activeVehicleId, getTodayStr, currentUser, loadData } from '../store.js';
+import { activeVehicle, activeVehicleId, getTodayStr, currentUser, loadData, addNotificationToFirestore } from '../store.js';
 import { db } from '../firebase.js';
 import { collection, addDoc, serverTimestamp, doc, updateDoc } from 'firebase/firestore';
 
@@ -207,8 +207,24 @@ const saveExpense = async () => {
     await addDoc(collection(db, "expenses"), expenseData);
 
     if (activeVehicle.value && newExpense.mileage > activeVehicle.value.mileage) {
+      const currentMileage = parseInt(newExpense.mileage);
+      const previousMileage = parseInt(activeVehicle.value.mileage || 0);
+      
+      const prevOilChange = Math.floor(previousMileage / 15000);
+      const nextOilChange = Math.floor(currentMileage / 15000);
+      
+      if (nextOilChange > prevOilChange) {
+        await addNotificationToFirestore({
+          id: 'oil_' + currentMileage,
+          iconBgClass: 'icon-danger',
+          icon: 'fa-solid fa-oil-can',
+          title: 'Wymagana wymiana oleju!',
+          text: `Przebieg Twojego pojazdu (${activeVehicle.value.make} ${activeVehicle.value.model}) wynosi już ${currentMileage} km i przekroczył kolejny próg 15 000 km. Zaplanuj wymianę oleju i filtrów!`
+        });
+      }
+
       const vRef = doc(db, "vehicles", activeVehicleId.value);
-      await updateDoc(vRef, { mileage: parseInt(newExpense.mileage) });
+      await updateDoc(vRef, { mileage: currentMileage });
     }
 
     if(navigator.vibrate) navigator.vibrate([100, 50, 100]); // Silniejsza wibracja na sukces

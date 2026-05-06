@@ -108,7 +108,7 @@
           </div>
         </div>
 
-        <div class="d-flex justify-content-between align-items-center mb-4 p-2 bg-light rounded-3">
+        <div class="d-flex justify-content-between align-items-center mb-3 p-2 bg-light rounded-3">
           <div>
             <div class="fw-bold small">Wibracje systemowe (Haptics)</div>
             <div class="text-muted" style="font-size: 0.72rem;">Wibracje przy interakcji</div>
@@ -116,6 +116,23 @@
           <div class="form-check form-switch fs-5">
             <input class="form-check-input" type="checkbox" role="switch" v-model="vibrationEnabled" @change="toggleVibration">
           </div>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center mb-4 p-2 bg-light rounded-3">
+          <div>
+            <div class="fw-bold small">Powiadomienia Push (FCM)</div>
+            <div class="text-muted" style="font-size: 0.72rem;">{{ pushPermissionStatusText }}</div>
+          </div>
+          <div class="form-check form-switch fs-5">
+            <input class="form-check-input" type="checkbox" role="switch" v-model="pushEnabled" @change="togglePush">
+          </div>
+        </div>
+
+        <!-- Token FCM do łatwego skopiowania i testowania -->
+        <div v-if="pushEnabled && fcmToken" class="mb-4 p-2 bg-white rounded-3 border" style="font-size: 0.65rem;">
+          <div class="text-muted fw-bold mb-1"><i class="fa-solid fa-key text-warning me-1"></i> Twój Token Urządzenia (FCM Token):</div>
+          <div class="text-truncate text-dark p-2 bg-light rounded select-all" style="font-family: monospace; cursor: pointer;" @click="copyToken">{{ fcmToken }}</div>
+          <small class="text-orange d-block mt-1" style="color: var(--brand-orange) !important;"><i class="fa-solid fa-copy me-1"></i> Kliknij powyższy tekst, aby skopiować i przetestować push!</small>
         </div>
 
         <!-- Uprawnienia urządzenia -->
@@ -139,8 +156,10 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { auth } from '../firebase.js';
+import { auth, db, messaging } from '../firebase.js';
 import { signOut } from 'firebase/auth';
+import { doc, setDoc } from 'firebase/firestore';
+import { getToken } from 'firebase/messaging';
 import { currentUser, deferredPrompt } from '../store.js';
 
 const router = useRouter();
@@ -166,6 +185,77 @@ const vibrationEnabled = ref(localStorage.getItem('vibrationEnabled') !== 'false
 const toggleVibration = () => {
   localStorage.setItem('vibrationEnabled', vibrationEnabled.value ? 'true' : 'false');
   if (vibrationEnabled.value && navigator.vibrate) navigator.vibrate(50);
+};
+
+// Push & FCM Logic
+const pushEnabled = ref(localStorage.getItem('pushEnabled') === 'true');
+const fcmToken = ref(localStorage.getItem('fcmToken') || '');
+const pushPermissionStatusText = ref(pushEnabled.value ? 'Aktywne' : 'Wyłączone');
+
+const togglePush = async () => {
+  if (pushEnabled.value) {
+    if (!messaging) {
+      pushPermissionStatusText.value = 'Brak wsparcia HTTPS/FCM';
+      pushEnabled.value = false;
+      alert('Powiadomienia Push (FCM) wymagają bezpiecznego połączenia HTTPS lub nie są wspierane przez tę przeglądarkę/środowisko.');
+      return;
+    }
+    try {
+      pushPermissionStatusText.value = 'Prośba o zgodę...';
+      const permission = await Notification.requestPermission();
+      
+      if (permission === 'granted') {
+        pushPermissionStatusText.value = 'Pobieranie tokenu...';
+        
+        // Wskazujemy na nasz zarejestrowany sw.js
+        const registration = await navigator.serviceWorker.ready;
+        
+        const token = await getToken(messaging, {
+          vapidKey: 'BH-0CNXEtwMNUFG51QmiZ-IlF9uDF5mI3nxGjc3vfN8m5Fyf9ElVyo6b_3032-FjMICfmK3v6lRSfVcxFUA3sV8',
+          serviceWorkerRegistration: registration
+        });
+        
+        if (token) {
+          fcmToken.value = token;
+          localStorage.setItem('fcmToken', token);
+          localStorage.setItem('pushEnabled', 'true');
+          pushPermissionStatusText.value = 'Aktywne';
+          
+          if (currentUser.value) {
+            await setDoc(doc(db, 'users', currentUser.value.uid, 'fcmTokens', token), {
+              token: token,
+              createdAt: new Date(),
+              device: navigator.userAgent
+            });
+          }
+          if (vibrationEnabled.value && navigator.vibrate) navigator.vibrate([50, 150]);
+        } else {
+          pushPermissionStatusText.value = 'Brak tokenu';
+          pushEnabled.value = false;
+        }
+      } else {
+        pushPermissionStatusText.value = 'Brak zgody';
+        pushEnabled.value = false;
+        localStorage.setItem('pushEnabled', 'false');
+      }
+    } catch (error) {
+      console.error('Błąd podczas rejestracji FCM:', error);
+      pushPermissionStatusText.value = 'Błąd serwera';
+      pushEnabled.value = false;
+      localStorage.setItem('pushEnabled', 'false');
+    }
+  } else {
+    localStorage.setItem('pushEnabled', 'false');
+    pushPermissionStatusText.value = 'Wyłączone';
+  }
+};
+
+const copyToken = () => {
+  if (fcmToken.value) {
+    navigator.clipboard.writeText(fcmToken.value);
+    if (vibrationEnabled.value && navigator.vibrate) navigator.vibrate(50);
+    alert('Skopiowano token urządzenia FCM do schowka!');
+  }
 };
 
 // GPS Permission logic

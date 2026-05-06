@@ -2,6 +2,7 @@ import { initializeApp } from "firebase/app";
 import { getAnalytics } from "firebase/analytics";
 import { getAuth, GoogleAuthProvider } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
+import { getMessaging } from "firebase/messaging";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDliSA0x8WFVdNtWnXQW9p_3ZZIDH0hm80",
@@ -18,6 +19,14 @@ const app = initializeApp(firebaseConfig);
 const analytics = getAnalytics(app);
 const auth = getAuth(app);
 const db = getFirestore(app);
+
+let messaging = null;
+try {
+  messaging = getMessaging(app);
+} catch (error) {
+  console.warn("Firebase Messaging (FCM) nie jest wspierane w tej przeglądarce/środowisku:", error);
+}
+
 const googleProvider = new GoogleAuthProvider();
 
-export { app, auth, db, googleProvider };
+export { app, auth, db, googleProvider, messaging };
