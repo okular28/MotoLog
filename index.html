@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="pl">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#ff761a">
+    <link rel="manifest" href="/MotoLog/manifest.json">
+    <title>MotoLog & Find</title>
+    <script>
+      // Szybkie przechwycenie PWA prompt zanim załaduje się Vue
+      window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        window.deferredPromptEvent = e;
+      });
+    </script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script type="module" crossorigin src="/MotoLog/assets/index-p7FwFeEs.js"></script>
+    <link rel="stylesheet" crossorigin href="/MotoLog/assets/index-BMrFUsNN.css">
+  </head>
+  <body>
+    <div id="app"></div>
+  </body>
+</html>
