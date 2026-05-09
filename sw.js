@@ -1,7 +1,7 @@
 const CACHE_NAME = 'motolog-cache-v1';
 const urlsToCache = [
-  './',
-  './index.html'
+  '/',
+  '/index.html'
 ];
 
 self.addEventListener('install', event => {
@@ -37,8 +37,8 @@ self.addEventListener('push', event => {
   
   const options = {
     body: data.body,
-    icon: './favicon.svg',
-    badge: './favicon.svg',
+    icon: '/favicon.svg',
+    badge: '/favicon.svg',
     vibrate: [100, 50, 100],
     data: {
       dateOfArrival: Date.now(),

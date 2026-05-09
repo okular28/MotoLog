@@ -1,7 +1,7 @@
 {
   "name": "MotoLog & Find",
   "short_name": "MotoLog",
-  "start_url": "/MotoLog/",
+  "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#ff761a",
