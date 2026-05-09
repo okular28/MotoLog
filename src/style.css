@@ -1,6 +1,7 @@
 :root {
   --text: #6b6375;
   --text-h: #08060d;
+  --placeholder: #5c5f62;
   --bg: #fff;
   --border: #e5e4e7;
   --code-bg: #f4f3ec;
@@ -33,6 +34,7 @@
 @media (prefers-color-scheme: dark) {
   :root {
     --text: #9ca3af;
+    --placeholder: white; 
     --text-h: #f3f4f6;
     --bg: #16171d;
     --border: #2e303a;
@@ -61,6 +63,14 @@ h2 {
   color: var(--text-h);
 }
 
+input.form-control::placeholder {
+    color: var(--placeholder) !important;
+    opacity: 1 !important; /* To jest kluczowe! Bootstrap domyślnie ustawia opacity na ok. 0.6 */
+}
+
+/* Dodatkowy fallback dla silników różnych przeglądarek (dla pewności) */
+input.form-control::-webkit-input-placeholder { color: var(--placeholder) !important; opacity: 1 !important; }
+input.form-control::-moz-placeholder { color: var(--placeholder) !important; opacity: 1 !important; }
 h1 {
   font-size: 56px;
   letter-spacing: -1.68px;

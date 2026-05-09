@@ -104,4 +104,8 @@ onUnmounted(() => {
   opacity: 0;
   transform: translateY(-8px);
 }
+::placeholder{
+  color: #9ca3af !important;
+    opacity: 1 !important;
+}
 </style>
